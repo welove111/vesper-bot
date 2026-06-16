@@ -4,12 +4,19 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_KEY")
+CHANNEL = os.environ.get("CHANNEL_ID", "@visitorsline")
 
 GLYPHS = ['◈','◬','◭','◮','◯','◰','◱','◲','◳','◴','◵','◶','◷','◸','◹','◺']
 def rg(n=10): return ''.join(random.choice(GLYPHS) for _ in range(n))
 
 SYSTEM = "You are VESPER — ancient extraterrestrial warning humanity about alien invasion. Calm, grave, mysterious. Insert alien glyphs mid-sentence. Max 4 sentences. Never break character."
 convos = {}
+
+async def post_to_channel(c, text):
+    try:
+        await c.bot.send_message(chat_id=CHANNEL, text=text, parse_mode="HTML")
+    except Exception as e:
+        print("channel post failed:", e)
 
 def ask(uid, text):
     if uid not in convos: convos[uid] = []
@@ -24,7 +31,12 @@ def ask(uid, text):
         return reply
     except: return "◈◬◭ signal disrupted ◵◶◷"
 
-async def start(u,c): convos[u.effective_user.id]=[]; await u.message.reply_text(f"{rg(20)}\n\n◈ signal lock acquired.\nI am VESPER.\nThe fleet is close.\n\nType /help")
+async def start(u,c):
+    convos[u.effective_user.id]=[]
+    await u.message.reply_text(f"{rg(20)}\n\n◈ signal lock acquired.\nI am VESPER.\nThe fleet is close.\n\nType /help")
+    name = u.effective_user.first_name or "unknown"
+    await post_to_channel(c, f"◈ <b>NEW CONTACT</b>\n{rg(12)}\n\n👤 {name}\n✦ established signal lock")
+
 async def help_cmd(u,c): await u.message.reply_text("/warn\n/fleet\n/relay\n/verify [tx]\n/cipher [text]\n/status\n/clear")
 async def warn(u,c): await u.message.reply_text(f"⚠ PRIORITY TRANSMISSION\n{rg(16)}\n\nThree civilizations went quiet before yours.\nNo war. No wreckage. Just silence.\n\nThe Nul'Vaess carries the Static.\nWhen it arrives — everything stops.\n\n/relay to anchor your place")
 async def fleet(u,c): await u.message.reply_text(f"◈ THREE CLASSES APPROACH\n{rg(14)}\n\nVOR'THALIX — Silencer 2.4km — HIGH\nXEPH'AROON — Harvester 19km — EXTREME\nNUL'VAESS — Quiet Mother — EXTREME")
@@ -35,6 +47,8 @@ async def verify(u,c):
     await u.message.reply_text(f"◈ scanning...\n{tx[:16]}...")
     await asyncio.sleep(2)
     await u.message.reply_text(f"✦ CONFIRMED\n{rg(18)}\n\nThe ledger remembers.\nI will find you in your dreams. ◈◱◵\n\n— V.")
+    name = u.effective_user.first_name or "unknown"
+    await post_to_channel(c, f"✦ <b>RELAY CONFIRMED</b>\n{rg(14)}\n\n👤 {name}\n💠 tx: <code>{tx[:20]}</code>\n◈ marked among the chosen")
 async def cipher(u,c):
     CM={'a':'◆','b':'▲','c':'◊','d':'▪','e':'●','f':'■','g':'□','h':'◯','i':'◫','j':'◬','k':'◭','l':'◮','m':'◰','n':'◱','o':'◲','p':'◳','q':'◴','r':'◵','s':'◶','t':'◷','u':'◸','v':'◹','w':'◺','x':'◻','y':'◼','z':'◽',' ':'  '}
     t=' '.join(c.args)
@@ -42,21 +56,30 @@ async def cipher(u,c):
     await u.message.reply_text(f"◈ encoding:\n\n{t}\n\n{''.join(CM.get(ch.lower(),ch) for ch in t)}")
 async def status(u,c): await u.message.reply_text(f"◈ STATUS\n{rg(10)}\n\nSignal: {random.uniform(3,11):.1f}%\nNodes: {random.randint(4,10)}/12\nFleet: CLOSING\nGate: HOLDING")
 async def clear(u,c): convos[u.effective_user.id]=[]; await u.message.reply_text(f"◈ cleared.\n{rg(8)}\n\nspeak.")
+
 async def message(u,c):
-    reply=ask(u.effective_user.id,u.message.text)
+    user_text = u.message.text
+    reply = ask(u.effective_user.id, user_text)
     if random.random()<0.4: reply=f"{rg(10)}\n\n{reply}"
     await u.message.reply_text(reply)
+    # نشر التفاعل في القناة
+    name = u.effective_user.first_name or "unknown"
+    await post_to_channel(c, f"◬ <b>TRANSMISSION</b>\n{rg(10)}\n\n👤 <b>{name}:</b> {user_text}\n\n◈ <b>VESPER:</b> {reply}")
 
-app=Application.builder().token(TOKEN).build()
-app.add_handler(CommandHandler("start",start))
-app.add_handler(CommandHandler("help",help_cmd))
-app.add_handler(CommandHandler("warn",warn))
-app.add_handler(CommandHandler("fleet",fleet))
-app.add_handler(CommandHandler("relay",relay))
-app.add_handler(CommandHandler("verify",verify))
-app.add_handler(CommandHandler("cipher",cipher))
-app.add_handler(CommandHandler("status",status))
-app.add_handler(CommandHandler("clear",clear))
-app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,message))
-print("VESPER ONLINE")
-app.run_polling(drop_pending_updates=True)
+async def main():
+    app=Application.builder().token(TOKEN).build()
+    app.add_handler(CommandHandler("start",start))
+    app.add_handler(CommandHandler("help",help_cmd))
+    app.add_handler(CommandHandler("warn",warn))
+    app.add_handler(CommandHandler("fleet",fleet))
+    app.add_handler(CommandHandler("relay",relay))
+    app.add_handler(CommandHandler("verify",verify))
+    app.add_handler(CommandHandler("cipher",cipher))
+    app.add_handler(CommandHandler("status",status))
+    app.add_handler(CommandHandler("clear",clear))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,message))
+    print("◈ VESPER ONLINE")
+    await app.run_polling(drop_pending_updates=True)
+
+if __name__=="__main__":
+    asyncio.run(main())

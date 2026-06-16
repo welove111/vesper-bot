@@ -47,20 +47,16 @@ async def message(u,c):
     if random.random()<0.4: reply=f"{rg(10)}\n\n{reply}"
     await u.message.reply_text(reply)
 
-async def main():
-    app=Application.builder().token(TOKEN).build()
-    app.add_handler(CommandHandler("start",start))
-    app.add_handler(CommandHandler("help",help_cmd))
-    app.add_handler(CommandHandler("warn",warn))
-    app.add_handler(CommandHandler("fleet",fleet))
-    app.add_handler(CommandHandler("relay",relay))
-    app.add_handler(CommandHandler("verify",verify))
-    app.add_handler(CommandHandler("cipher",cipher))
-    app.add_handler(CommandHandler("status",status))
-    app.add_handler(CommandHandler("clear",clear))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,message))
-    print("◈ VESPER ONLINE")
-    await app.run_polling(drop_pending_updates=True)
-
-if __name__=="__main__":
-    asyncio.run(main())
+app=Application.builder().token(TOKEN).build()
+app.add_handler(CommandHandler("start",start))
+app.add_handler(CommandHandler("help",help_cmd))
+app.add_handler(CommandHandler("warn",warn))
+app.add_handler(CommandHandler("fleet",fleet))
+app.add_handler(CommandHandler("relay",relay))
+app.add_handler(CommandHandler("verify",verify))
+app.add_handler(CommandHandler("cipher",cipher))
+app.add_handler(CommandHandler("status",status))
+app.add_handler(CommandHandler("clear",clear))
+app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,message))
+print("VESPER ONLINE")
+app.run_polling(drop_pending_updates=True)
